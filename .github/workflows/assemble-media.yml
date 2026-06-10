@@ -1,0 +1,38 @@
+name: Assemble demo media
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout chunks branch
+        uses: actions/checkout@v4
+        with:
+          ref: media-upload
+          path: chunks
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+      - name: Assemble and verify
+        run: |
+          mkdir -p main/media
+          cat chunks/c/m* > main/media/demo.mp4
+          cat chunks/c/g* > main/media/demo.gif
+          cd main
+          echo "173e972241b35f3dde11640e8d0e7e67668056cab6f760aafbd64306b13a1d1b  media/demo.mp4" | sha256sum -c
+          echo "58c8366d47b1ed437844c852d620c07ee68801fd990189ab71e6084a1fae3a88  media/demo.gif" | sha256sum -c
+      - name: Commit media to main
+        run: |
+          cd main
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add media
+          git commit -m "Add demo video and GIF"
+          git push origin main
+      - name: Delete chunks branch
+        run: |
+          cd main
+          git push origin --delete media-upload
